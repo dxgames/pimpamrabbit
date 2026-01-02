@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pim-Pam-Rabbit - DX GAMES</title>
+    
+    <meta property="og:title" content="Pim-Pam-Rabbit">
+    <meta property="og:description" content="¡No dejes que el conejo se ría de ti! Juega ahora gratis.">
+    <meta property="og:image" content="https://i.postimg.cc/hjpXGGzb/previsualizacion.jpg">
+    <meta property="og:url" content="https://dxgames.com">
+    <meta property="og:type" content="website">
+
+    <link rel="icon" href="https://i.postimg.cc/VvPzmQ4p/icono.jpg">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/VvPzmQ4p/icono.jpg">
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #222; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; touch-action: none; }
+        
+        #ui { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; z-index: 10; 
+        }
+        #score-container { position: absolute; top: 60px; left: 0; width: 100%; text-align: center; }
+        #score { font-size: 60px; font-weight: 900; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.5); line-height: 1; margin: 0; }
+        #level-info { font-size: 20px; color: #ffeb3b; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; text-shadow: 1px 1px 2px black; margin-top: 5px; }
+        
+        #pause-btn {
+            position: absolute; top: 5px; right: 5px; background: none; border: none;
+            color: white; font-size: 35px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.1s; padding: 10px;
+        }
+        #pause-btn:active { transform: scale(0.9); opacity: 0.8; }
+
+        #main-menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 30;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; backdrop-filter: blur(5px);
+        }
+        #game-title-img {
+            max-width: 85%; height: auto; margin-bottom: 20px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .record-display {
+            font-size: 22px; color: #ffeb3b; margin-bottom: 25px; font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5);
+            padding: 5px 20px; border-radius: 15px;
+        }
+        
+        .overlay-screen {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 20, 0.95); z-index: 40;
+            flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; backdrop-filter: blur(10px);
+        }
+        #pause-menu { background: rgba(0, 0, 0, 0.85); z-index: 50; }
+        #msg-box { 
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(25, 25, 25, 0.95); color: white; padding: 40px 20px; border-radius: 20px; 
+            text-align: center; width: 85%; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #444; backdrop-filter: blur(5px); z-index: 45;
+        }
+
+        h2 { margin: 0 0 15px 0; color: #ff5722; font-size: 36px; text-transform: uppercase; font-weight: 900; letter-spacing: 2px; }
+        p { margin: 0 0 20px 0; font-size: 18px; color: #ccc; }
+        .about-text { font-size: 20px; line-height: 1.6; margin-bottom: 30px; color: #ddd; }
+        
+        button { 
+            background: linear-gradient(135deg, #4caf50, #45a049); 
+            color: white; border: none; padding: 15px 40px; font-size: 20px; 
+            border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            transition: transform 0.1s; margin: 10px; min-width: 200px;
+        }
+        button:active { transform: scale(0.95); }
+        button.secondary { background: linear-gradient(135deg, #2196f3, #1976d2); box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4); }
+        button.danger { background: linear-gradient(135deg, #f44336, #d32f2f); box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4); }
+    </style>
+</head>
+<body>
+    <div id="main-menu">
+        <img src="https://i.postimg.cc/26vHpP1k/titulo.png" alt="Pim-Pam-Rabbit" id="game-title-img">
+        <div id="menu-record" class="record-display">RÉCORD: 0</div>
+        <button onclick="startGame()">JUGAR</button>
+        <button class="secondary" onclick="toggleAbout(true)">Acerca de</button>
+    </div>
+
+    <div id="about-screen" class="overlay-screen">
+        <h2>Acerca de</h2>
+        <div class="about-text">
+            Creado por <strong>DX GAMES</strong><br>
+            Versión: v1.0 Final<br><br>
+            ¡GRACIAS POR JUGAR!
+        </div>
+        <button class="secondary" onclick="toggleAbout(false)">VOLVER</button>
+    </div>
+
+    <div id="pause-menu" class="overlay-screen">
+        <h2 style="color: #fff;">PAUSA</h2>
+        <button onclick="resumeGame()">CONTINUAR</button>
+        <button class="danger" onclick="exitToMenu()">MENÚ PRINCIPAL</button>
+    </div>
+
+    <div id="ui">
+        <div id="score-container">
+            <div id="score">0</div>
+            <div id="level-info">NIVEL 1 | 0 / 1</div>
+        </div>
+        <button id="pause-btn" onclick="pauseGame()">⏸️</button>
+    </div>
+
+    <div id="msg-box">
+        <h2 id="msg-title">GAME OVER</h2>
+        <p id="msg-desc">Se escaparon.</p>
+        <div id="final-record" style="font-size: 16px; color: #ffeb3b; margin-bottom: 20px;"></div>
+        <button onclick="restartGame()">REINTENTAR</button>
+        <button class="secondary" onclick="exitToMenu()">MENÚ</button>
+    </div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- Configuración de Escena ---
+        const scene = new THREE.Scene();
+        const skyColor = 0x5dade2; 
+        scene.background = new THREE.Color(skyColor); 
+        scene.fog = new THREE.Fog(skyColor, 80, 300); // Niebla ajustada para el nuevo ángulo
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+        // Cámara más baja para ver mejor los hoyos delanteros
+        camera.position.set(0, 25, 42); 
+        camera.lookAt(0, 0, -20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // --- Iluminación ---
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+        hemiLight.position.set(0, 20, 0);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(15, 50, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -50;
+        dirLight.shadow.camera.right = 50;
+        dirLight.shadow.camera.top = 50;
+        dirLight.shadow.camera.bottom = -100;
+        scene.add(dirLight);
+
+        // --- Nubes Redonditas y Lentas ---
+        const clouds = [];
+        function createClouds() {
+            // Usamos esferas para un look más suave
+            const cloudGeo = new THREE.SphereGeometry(1.5, 8, 8); 
+            const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+            
+            for(let i=0; i<15; i++) {
+                const group = new THREE.Group();
+                const parts = 3 + Math.floor(Math.random() * 4);
+                for(let j=0; j<parts; j++){
+                    const mesh = new THREE.Mesh(cloudGeo, cloudMat);
+                    mesh.position.set(
+                        (Math.random()-0.5)*3,
+                        (Math.random()-0.5)*1.5,
+                        (Math.random()-0.5)*3
+                    );
+                    // Escala variada para deformar las esferas
+                    mesh.scale.set(
+                        1 + Math.random()*1.5,
+                        0.8 + Math.random()*0.5,
+                        1 + Math.random()*1.5
+                    );
+                    group.add(mesh);
+                }
+                group.position.set(
+                    (Math.random() - 0.5) * 200, 
+                    35 + Math.random() * 15, 
+                    -50 - Math.random() * 150
+                );
+                // Velocidad muy baja
+                group.userData = { speed: 0.05 + Math.random() * 0.1 };
+                scene.add(group);
+                clouds.push(group);
+            }
+        }
+        createClouds();
+
+        // --- Suelo ---
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(300, 300), 
+            new THREE.MeshStandardMaterial({ color: 0x4caf50 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.z = -50; 
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Estanque
+        const pondZ = -55;
+        const pondRadius = 14;
+        const pond = new THREE.Mesh(
+            new THREE.CircleGeometry(pondRadius, 64), 
+            new THREE.MeshStandardMaterial({ color: 0x0077be, roughness: 0.05, metalness: 0.1 })
+        );
+        pond.rotation.x = -Math.PI / 2;
+        pond.position.set(0, 0.1, pondZ);
+        scene.add(pond);
+
+        // --- Bosque y Decoración ---
+        const treeGeoGroup = new THREE.Group();
+        const trunkMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.0, 3, 7), new THREE.MeshStandardMaterial({ color: 0x5D4037 }));
+        trunkMesh.position.y = 1.5; trunkMesh.castShadow = true;
+        const leavesMesh = new THREE.Mesh(new THREE.ConeGeometry(3.5, 8, 7), new THREE.MeshStandardMaterial({ color: 0x2E7D32 }));
+        leavesMesh.position.y = 5.5; leavesMesh.castShadow = true;
+        treeGeoGroup.add(trunkMesh, leavesMesh);
+
+        function addTree(x, z, scale = 1) {
+            const dist = Math.sqrt(x * x + (z - pondZ) * (z - pondZ));
+            if (dist < pondRadius + 2) return;
+            if (x > -10 && x < 10 && z > -5 && z < 15) return;
+
+            const tree = treeGeoGroup.clone();
+            tree.position.set(x, 0, z);
+            const s = scale * (0.8 + Math.random() * 0.5);
+            tree.scale.set(s, s, s);
+            tree.rotation.y = Math.random() * Math.PI;
+            scene.add(tree);
+        }
+
+        function buildForest() {
+            // Paredes laterales
+            for(let z = -100; z < 35; z += 5) { 
+                addTree(-18 - Math.random() * 15, z); 
+                addTree(-30 - Math.random() * 20, z);
+                addTree(18 + Math.random() * 15, z);
+                addTree(30 + Math.random() * 20, z);
+            }
+            
+            // Fondo lejano
+            for(let i = 0; i < 150; i++) { 
+                const tx = (Math.random() - 0.5) * 180;
+                const tz = -80 - Math.random() * 80;
+                addTree(tx, tz);
+            }
+
+            // Frontales decorativos
+            addTree(-12, 10); addTree(-16, 5); addTree(-14, 15);
+            addTree(12, 10); addTree(16, 5); addTree(14, 15);
+            addTree(-9, 22); addTree(9, 22);
+        }
+        buildForest();
+
+        // --- Hoyos ---
+        const holes = [];
+        const holeGeo = new THREE.CircleGeometry(1.4, 32);
+        const holeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const holePositions = [{ x: -4, z: 6 }, { x: 4, z: 6 }, { x: 0, z: 9 }, { x: -6, z: 2 }, { x: 6, z: 2 }];
+
+        holePositions.forEach(pos => {
+            const hole = new THREE.Mesh(holeGeo, holeMat);
+            hole.rotation.x = -Math.PI / 2;
+            hole.position.set(pos.x, 0.05, pos.z);
+            scene.add(hole);
+            holes.push(hole.position);
+        });
+
+        // --- Variables ---
+        let highScore = localStorage.getItem('pimPamRabbit_record') || 0;
+        let level = 1; let score = 0;
+        let rabbits = []; let rabbitsCaught = 0; let rabbitsEscaped = 0; let rabbitsSpawned = 0;
+        let isPlaying = false; let isPaused = false; let isTransitioning = false; let isTaunting = false;
+        
+        // --- UI ---
+        const uiDiv = document.getElementById('ui');
+        const mainMenu = document.getElementById('main-menu');
+        const aboutScreen = document.getElementById('about-screen');
+        const pauseMenu = document.getElementById('pause-menu');
+        const uiScore = document.getElementById('score');
+        const uiLevel = document.getElementById('level-info');
+        const msgBox = document.getElementById('msg-box');
+        const msgTitle = document.getElementById('msg-title');
+        const msgDesc = document.getElementById('msg-desc');
+        const finalRecord = document.getElementById('final-record');
+        const menuRecord = document.getElementById('menu-record');
+
+        function updateRecordDisplay() { menuRecord.innerText = `RÉCORD: ${highScore}`; }
+        updateRecordDisplay();
+
+        function saveRecord() {
+            if (score > highScore) { highScore = score; localStorage.setItem('pimPamRabbit_record', highScore); }
+        }
+
+        // --- Funciones Control ---
+        window.startGame = function() {
+            mainMenu.style.display = 'none'; msgBox.style.display = 'none'; uiDiv.style.display = 'block';
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            restartGame();
+        };
+
+        window.toggleAbout = function(show) { aboutScreen.style.display = show ? 'flex' : 'none'; };
+
+        window.pauseGame = function() {
+            if(!isPlaying || isTaunting) return;
+            isPaused = true; pauseMenu.style.display = 'flex';
+        };
+
+        window.resumeGame = function() { isPaused = false; pauseMenu.style.display = 'none'; };
+        
+        window.exitToMenu = function() {
+            saveRecord();
+            pauseMenu.style.display = 'none'; msgBox.style.display = 'none'; uiDiv.style.display = 'none';
+            rabbits.forEach(r => scene.remove(r)); rabbits = [];
+            isPlaying = false; isPaused = false; isTaunting = false;
+            mainMenu.style.display = 'flex'; updateRecordDisplay();
+        };
+
+        function updateUI() { uiLevel.innerText = `NIVEL ${level} | ${rabbitsCaught} / ${level}`; uiScore.innerText = score; }
+
+        // --- Creación Conejos ---
+        function createRabbitMesh() {
+            const group = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 1.6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            body.position.y = 0.7; body.castShadow = true;
+            const earGeo = new THREE.BoxGeometry(0.35, 1.2, 0.35);
+            const earMat = new THREE.MeshStandardMaterial({ color: 0xffaacc });
+            const ear1 = new THREE.Mesh(earGeo, earMat); ear1.position.set(-0.5, 1.6, 0.4);
+            const ear2 = new THREE.Mesh(earGeo, earMat); ear2.position.set(0.5, 1.6, 0.4);
+            group.add(body, ear1, ear2);
+
+            const hitbox = new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3.5), new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 }));
+            hitbox.position.y = 1.0; hitbox.userData = { isHitbox: true };
+            group.add(hitbox);
+            return group;
+        }
+
+        function startLevel() {
+            isPlaying = true; isTransitioning = false; isTaunting = false;
+            rabbitsCaught = 0; rabbitsEscaped = 0; rabbitsSpawned = 0;
+            updateUI(); msgBox.style.display = 'none';
+
+            const spawnTimer = setInterval(() => {
+                if (!isPlaying || isPaused || rabbitsSpawned >= level) {
+                    if(!isPlaying || rabbitsSpawned >= level) clearInterval(spawnTimer);
+                    return;
+                }
+                spawnRabbit();
+                rabbitsSpawned++;
+            }, Math.max(400, 1000 - (level * 30)));
+        }
+
+        function spawnRabbit() {
+            const rabbit = createRabbitMesh();
+            const side = Math.random() > 0.5 ? 1 : -1;
+            const startX = side * (18 + Math.random() * 10);
+            const startZ = -55 + (Math.random() - 0.5) * 10;
+
+            rabbit.position.set(startX, 0, startZ);
+            const target = holes[Math.floor(Math.random() * holes.length)];
+            
+            let baseSpeed = 5.0; 
+            if (level >= 4) { baseSpeed += (level - 3) * 0.35; }
+            const speed = baseSpeed + Math.random() * 2; 
+
+            rabbit.userData = {
+                target: target, speed: speed, hopOffset: Math.random() * 100,
+                active: true, hasJumped: false 
+            };
+            rabbit.lookAt(target.x, 0, target.z);
+            scene.add(rabbit);
+            rabbits.push(rabbit);
+        }
+
+        function checkLevelEnd() {
+            updateUI();
+            if (isTransitioning) return;
+            const total = level; const finished = rabbitsCaught + rabbitsEscaped;
+
+            if (finished >= total) {
+                isTransitioning = true;
+                let failed = false; let reason = "";
+
+                if (rabbitsEscaped === total) { failed = true; reason = "¡Se escaparon todos!"; }
+                else if (level >= 4) {
+                    const minNeeded = Math.ceil(total * 0.5);
+                    if (rabbitsCaught < minNeeded) { failed = true; reason = `Nivel ${level}: Solo atrapaste ${rabbitsCaught}.`; }
+                }
+
+                if (failed) { triggerTauntSequence(reason); }
+                else { setTimeout(() => { level++; startLevel(); }, 1000); }
+            }
+        }
+
+        function triggerTauntSequence(reason) {
+            isPlaying = false; isTaunting = true;
+            rabbits.forEach(r => scene.remove(r)); rabbits = [];
+
+            const tauntHole = holes[2]; 
+            const tauntRabbit = createRabbitMesh();
+            tauntRabbit.children = tauntRabbit.children.filter(c => !c.userData.isHitbox);
+            tauntRabbit.position.set(tauntHole.x, -2, tauntHole.z); 
+            tauntRabbit.rotation.y = Math.PI; scene.add(tauntRabbit);
+
+            let phase = 0; let tauntTime = 0;
+            const tauntAnim = setInterval(() => {
+                tauntTime += 0.05;
+                if (phase === 0) {
+                    tauntRabbit.position.y += 0.2;
+                    if (tauntRabbit.position.y >= 0) { tauntRabbit.position.y = 0; phase = 1; playTauntSound(); }
+                } else if (phase === 1) {
+                    tauntRabbit.position.y = Math.abs(Math.sin(tauntTime * 20)) * 0.5;
+                    tauntRabbit.rotation.z = Math.sin(tauntTime * 30) * 0.2;
+                    if (tauntTime > 2.5) phase = 2;
+                } else if (phase === 2) {
+                    tauntRabbit.position.y -= 0.2;
+                    if (tauntRabbit.position.y < -3) { clearInterval(tauntAnim); scene.remove(tauntRabbit); gameOver(reason); }
+                }
+            }, 30);
+        }
+
+        // --- Audio ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTauntSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            [0, 0.15, 0.3].forEach((delay, i) => {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800 + (i % 2 === 0 ? 0 : 200), now + delay); 
+                osc.frequency.linearRampToValueAtTime(600, now + delay + 0.1);
+                gain.gain.setValueAtTime(0.2, now + delay); gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.1);
+                osc.start(now + delay); osc.stop(now + delay + 0.12);
+            });
+        }
+
+        function playJumpSound() {
+            if (audioCtx.state === 'suspended') return;
+            if (Math.random() > 0.4) return; 
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            const now = audioCtx.currentTime;
+            osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(450, now + 0.1);
+            gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        }
+
+        function playShotSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function gameOver(reason) {
+            saveRecord();
+            msgTitle.innerText = "¡PERDISTE!"; msgDesc.innerText = reason;
+            finalRecord.innerHTML = `Puntuación: <strong>${score}</strong><br>Mejor Récord: <strong>${highScore}</strong>`;
+            msgBox.style.display = 'block'; uiDiv.style.display = 'none';
+        }
+
+        // --- Input & Loop ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onInput(x, y) {
+            if (!isPlaying || isPaused || isTaunting) return;
+
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = -(y / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            for (let hit of intersects) {
+                let obj = hit.object;
+                while (obj.parent && obj.parent.type !== 'Scene') obj = obj.parent;
+                
+                if (obj.userData && obj.userData.active) {
+                    obj.userData.active = false;
+                    const tempMesh = obj.clone();
+                    tempMesh.children = tempMesh.children.filter(c => !c.userData.isHitbox);
+                    tempMesh.children.forEach(c => { if(c.material) { c.material = c.material.clone(); c.material.color.set(0xff0000); } });
+                    scene.add(tempMesh);
+                    scene.remove(obj);
+                    
+                    let s = 1;
+                    const deathAnim = setInterval(() => {
+                        s -= 0.15; tempMesh.scale.set(s,s,s);
+                        if(s <= 0) { scene.remove(tempMesh); clearInterval(deathAnim); }
+                    }, 30);
+
+                    score += 10; rabbitsCaught++;
+                    playShotSound(); checkLevelEnd();
+                    break; 
+                }
+            }
+        }
+
+        window.addEventListener('touchstart', (e) => {
+            if(e.target.tagName === 'CANVAS') e.preventDefault();
+            onInput(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        }, { passive: false });
+        
+        window.addEventListener('mousedown', (e) => { onInput(e.clientX, e.clientY); });
+
+        window.restartGame = function() {
+            rabbits.forEach(r => scene.remove(r)); rabbits = [];
+            level = 1; score = 0;
+            uiDiv.style.display = 'block';
+            startLevel();
+        };
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Mover Nubes Lentas
+            clouds.forEach(c => {
+                c.position.x += c.userData.speed * 0.02; // Velocidad muy reducida
+                if(c.position.x > 150) c.position.x = -150;
+            });
+
+            if(isPaused || isTaunting) { renderer.render(scene, camera); return; }
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            for (let i = rabbits.length - 1; i >= 0; i--) {
+                const r = rabbits[i];
+                if (!r.userData.active) {
+                     if(!scene.children.includes(r)) rabbits.splice(i, 1);
+                     continue; 
+                }
+
+                const target = r.userData.target;
+                const dir = new THREE.Vector3().subVectors(target, r.position).normalize();
+                
+                r.position.add(dir.multiplyScalar(r.userData.speed * delta));
+                const sineVal = Math.sin(time * 12 + r.userData.hopOffset);
+                r.position.y = Math.abs(sineVal) * 1.2;
+                r.rotation.x = Math.sin(time * 24 + r.userData.hopOffset) * 0.2;
+                r.lookAt(target.x, 0, target.z);
+
+                if (Math.abs(sineVal) < 0.2 && !r.userData.hasJumped) {
+                    playJumpSound(); r.userData.hasJumped = true; 
+                } else if (Math.abs(sineVal) > 0.5) {
+                    r.userData.hasJumped = false; 
+                }
+
+                if (new THREE.Vector3(r.position.x, 0, r.position.z).distanceTo(target) < 1.0) {
+                    scene.remove(r); r.userData.active = false;
+                    rabbitsEscaped++; checkLevelEnd();
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate(); 
+    </script>
+</body>
+</html>
