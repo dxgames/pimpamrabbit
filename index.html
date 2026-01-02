@@ -92,7 +92,7 @@
         <h2>Acerca de</h2>
         <div class="about-text">
             Creado por <strong>DX GAMES</strong><br>
-            Versión: v1.0 Final<br><br>
+            Versión: v1.0<br><br>
             ¡GRACIAS POR JUGAR!
         </div>
         <button class="secondary" onclick="toggleAbout(false)">VOLVER</button>
@@ -371,7 +371,7 @@
             const target = holes[Math.floor(Math.random() * holes.length)];
             
             let baseSpeed = 5.0; 
-            if (level >= 4) { baseSpeed += (level - 3) * 0.35; }
+            if (level >= 4) { baseSpeed += (level - 3) * 1.35; }
             const speed = baseSpeed + Math.random() * 2; 
 
             rabbit.userData = {
