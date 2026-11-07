@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pim-Pam-Rabbit - DX GAMES</title>
     
     <meta property="og:title" content="Pim-Pam-Rabbit">
@@ -21,17 +21,19 @@
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             pointer-events: none; z-index: 10; 
         }
-        #score-container { position: absolute; top: 60px; left: 0; width: 100%; text-align: center; }
+        #score-container { position: absolute; top: calc(60px + env(safe-area-inset-top, 0px)); left: 0; width: 100%; text-align: center; }
         #score { font-size: 60px; font-weight: 900; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.5); line-height: 1; margin: 0; }
         #level-info { font-size: 20px; color: #ffeb3b; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; text-shadow: 1px 1px 2px black; margin-top: 5px; }
         
-        #pause-btn {
-            position: absolute; top: 5px; right: 5px; background: none; border: none;
+        #pause-btn, #mute-btn {
+            position: absolute; top: calc(5px + env(safe-area-inset-top, 0px)); right: 5px; min-width: 0; margin: 0; box-shadow: none; background: none; border: none;
             color: white; font-size: 35px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
             cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center;
             transition: transform 0.1s; padding: 10px;
         }
-        #pause-btn:active { transform: scale(0.9); opacity: 0.8; }
+        #pause-btn:active, #mute-btn:active { transform: scale(0.9); opacity: 0.8; }
+        #mute-btn { right: auto; left: 5px; }
+        #hint { margin-top: 8px; font-size: 16px; color: #fff; text-shadow: 1px 1px 3px black; }
 
         #main-menu {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -78,7 +80,44 @@
         button:active { transform: scale(0.95); }
         button.secondary { background: linear-gradient(135deg, #2196f3, #1976d2); box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4); }
         button.danger { background: linear-gradient(135deg, #f44336, #d32f2f); box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4); }
-    </style>
+            /* ESTILOS DEL REGISTRO DE CAMBIOS */
+        .changelog {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            border: 1px solid #555;
+            font-size: 16px;
+            text-align: left;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+        .changelog h3 {
+            color: #ffeb3b;
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            text-align: center;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        .changelog .version-title {
+            color: #00ffc8;
+            margin: 10px 0 5px 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .changelog ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #ccc;
+        }
+        .changelog ul li {
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+        .changelog::-webkit-scrollbar { width: 6px; }
+        .changelog::-webkit-scrollbar-thumb { background: #4caf50; border-radius: 10px; }
+</style>
 </head>
 <body>
     <div id="main-menu">
@@ -88,12 +127,29 @@
         <button class="secondary" onclick="toggleAbout(true)">Acerca de</button>
     </div>
 
-    <div id="about-screen" class="overlay-screen">
+            <div id="about-screen" class="overlay-screen">
         <h2>Acerca de</h2>
-        <div class="about-text">
+        <div class="about-text" style="margin-bottom: 15px;">
             Creado por <strong>DX GAMES</strong><br>
-            Versión: v1.0.1<br><br>
+            Versión: v1.0.5<br><br>
             ¡GRACIAS POR JUGAR!
+            
+            <!-- CAJA DE REGISTRO DE CAMBIOS -->
+            <div class="changelog">
+                <h3>REGISTRO DE CAMBIOS</h3>
+                
+                <div class="version-title">v1.0.5</div>
+                <ul>
+                    <li>Se añadieron caritas a los conejos.</li>
+                    <li>Varios errores han sido corregidos.</li>
+                    <li>Se optimizó la experiencia de juego.</li>
+                    <li>Se mejoró la animación de los conejos al saltar.</li>
+                    <li>Se añadió un botón para silenciar el sonido del juego.</li>
+<li>Se añadio un nuevo sistema de vibración al tocar un conejo y al perder el juego.</li>
+                </ul>
+                
+                
+            </div>
         </div>
         <button class="secondary" onclick="toggleAbout(false)">VOLVER</button>
     </div>
@@ -108,7 +164,9 @@
         <div id="score-container">
             <div id="score">0</div>
             <div id="level-info">NIVEL 1 | 0 / 1</div>
+            <div id="hint">¡Toca a los conejos antes de que lleguen a su hoyo!</div>
         </div>
+        <button id="mute-btn" onclick="toggleMute()">🔊</button>
         <button id="pause-btn" onclick="pauseGame()">⏸️</button>
     </div>
 
@@ -152,8 +210,8 @@
         const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
         dirLight.position.set(15, 50, 20);
         dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
         dirLight.shadow.camera.left = -50;
         dirLight.shadow.camera.right = 50;
         dirLight.shadow.camera.top = 50;
@@ -219,25 +277,28 @@
         pond.position.set(0, 0.1, pondZ);
         scene.add(pond);
 
-        // --- Bosque y Decoración ---
-        const treeGeoGroup = new THREE.Group();
-        const trunkMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.0, 3, 7), new THREE.MeshStandardMaterial({ color: 0x5D4037 }));
-        trunkMesh.position.y = 1.5; trunkMesh.castShadow = true;
-        const leavesMesh = new THREE.Mesh(new THREE.ConeGeometry(3.5, 8, 7), new THREE.MeshStandardMaterial({ color: 0x2E7D32 }));
-        leavesMesh.position.y = 5.5; leavesMesh.castShadow = true;
-        treeGeoGroup.add(trunkMesh, leavesMesh);
+        // --- Bosque y Decoración (árboles instanciados: 4 draw calls en vez de cientos) ---
+        const treeData = [];
 
         function addTree(x, z, scale = 1) {
             const dist = Math.sqrt(x * x + (z - pondZ) * (z - pondZ));
             if (dist < pondRadius + 2) return;
             if (x > -10 && x < 10 && z > -5 && z < 15) return;
+            treeData.push({ x, z, s: scale * (0.8 + Math.random() * 0.5), r: Math.random() * Math.PI });
+        }
 
-            const tree = treeGeoGroup.clone();
-            tree.position.set(x, 0, z);
-            const s = scale * (0.8 + Math.random() * 0.5);
-            tree.scale.set(s, s, s);
-            tree.rotation.y = Math.random() * Math.PI;
-            scene.add(tree);
+        function buildTreeInstances() {
+            const trunkGeo = new THREE.CylinderGeometry(0.6, 1.0, 3, 7); trunkGeo.translate(0, 1.5, 0);
+            const leavesGeo = new THREE.ConeGeometry(3.5, 8, 7); leavesGeo.translate(0, 5.5, 0);
+            const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x5D4037 }), treeData.length);
+            const leaves = new THREE.InstancedMesh(leavesGeo, new THREE.MeshStandardMaterial({ color: 0x2E7D32 }), treeData.length);
+            const m = new THREE.Matrix4(); const q = new THREE.Quaternion(); const up = new THREE.Vector3(0, 1, 0);
+            const p = new THREE.Vector3(); const sc = new THREE.Vector3();
+            treeData.forEach((t, i) => {
+                q.setFromAxisAngle(up, t.r); p.set(t.x, 0, t.z); sc.set(t.s, t.s, t.s);
+                m.compose(p, q, sc); trunks.setMatrixAt(i, m); leaves.setMatrixAt(i, m);
+            });
+            [trunks, leaves].forEach(mesh => { mesh.castShadow = true; mesh.frustumCulled = false; scene.add(mesh); });
         }
 
         function buildForest() {
@@ -262,6 +323,7 @@
             addTree(-9, 22); addTree(9, 22);
         }
         buildForest();
+        buildTreeInstances();
 
         // --- Hoyos ---
         const holes = [];
@@ -278,7 +340,8 @@
         });
 
         // --- Variables ---
-        let highScore = localStorage.getItem('pimPamRabbit_record') || 0;
+        let highScore = 0;
+        try { highScore = parseInt(localStorage.getItem('pimPamRabbit_record'), 10) || 0; } catch (e) {}
         let level = 1; let score = 0;
         let rabbits = []; let rabbitsCaught = 0; let rabbitsEscaped = 0; let rabbitsSpawned = 0;
         let isPlaying = false; let isPaused = false; let isTransitioning = false; let isTaunting = false;
@@ -295,12 +358,14 @@
         const msgDesc = document.getElementById('msg-desc');
         const finalRecord = document.getElementById('final-record');
         const menuRecord = document.getElementById('menu-record');
+        const uiHint = document.getElementById('hint');
+        const muteBtn = document.getElementById('mute-btn');
 
         function updateRecordDisplay() { menuRecord.innerText = `RÉCORD: ${highScore}`; }
         updateRecordDisplay();
 
         function saveRecord() {
-            if (score > highScore) { highScore = score; localStorage.setItem('pimPamRabbit_record', highScore); }
+            if (score > highScore) { highScore = score; try { localStorage.setItem('pimPamRabbit_record', highScore); } catch (e) {} }
         }
 
         // --- Funciones Control ---
@@ -320,6 +385,7 @@
         window.resumeGame = function() { isPaused = false; pauseMenu.style.display = 'none'; };
         
         window.exitToMenu = function() {
+            clearTimers();
             saveRecord();
             pauseMenu.style.display = 'none'; msgBox.style.display = 'none'; uiDiv.style.display = 'none';
             rabbits.forEach(r => scene.remove(r)); rabbits = [];
@@ -327,20 +393,47 @@
             mainMenu.style.display = 'flex'; updateRecordDisplay();
         };
 
-        function updateUI() { uiLevel.innerText = `NIVEL ${level} | ${rabbitsCaught} / ${level}`; uiScore.innerText = score; }
+        function updateUI() {
+            uiLevel.innerText = `NIVEL ${level} | ${rabbitsCaught} / ${neededToPass(level)} (de ${level} 🐰)`;
+            uiScore.innerText = score;
+            uiHint.style.display = level === 1 ? 'block' : 'none';
+        }
 
-        // --- Creación Conejos ---
+        // --- Configuración de dificultad (ajusta aquí para balancear) ---
+        const CONFIG = {
+            points: 10, levelPause: 1000,
+            spawnStart: 1000, spawnStep: 30, spawnMin: 400,
+            baseSpeed: 5, speedFromLevel: 4, speedPerLevel: 1.35, speedRandom: 2,
+            ratioFromLevel: 4, ratio: 0.5
+        };
+        const neededToPass = lvl => lvl >= CONFIG.ratioFromLevel ? Math.ceil(lvl * CONFIG.ratio) : 1;
+        let spawnTimer = null; let levelTimeout = null;
+        function clearTimers() { clearInterval(spawnTimer); clearTimeout(levelTimeout); }
+
+        // --- Creación Conejos (geometrías y materiales compartidos) ---
+        const RG = {
+            body: new THREE.BoxGeometry(1.4, 1.4, 1.6), ear: new THREE.BoxGeometry(0.35, 1.2, 0.35),
+            eye: new THREE.BoxGeometry(0.16, 0.25, 0.05), mouth: new THREE.BoxGeometry(0.2, 0.12, 0.05),
+            hit: new THREE.BoxGeometry(3.5, 3.5, 3.5)
+        };
+        const RM = {
+            body: new THREE.MeshStandardMaterial({ color: 0xffffff }), ear: new THREE.MeshStandardMaterial({ color: 0xffaacc }),
+            eye: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }), mouth: new THREE.MeshStandardMaterial({ color: 0xff5588, roughness: 0.9 }),
+            hit: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }), dead: new THREE.MeshStandardMaterial({ color: 0xff0000 })
+        };
+
         function createRabbitMesh() {
             const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 1.6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-            body.position.y = 0.7; body.castShadow = true;
-            const earGeo = new THREE.BoxGeometry(0.35, 1.2, 0.35);
-            const earMat = new THREE.MeshStandardMaterial({ color: 0xffaacc });
-            const ear1 = new THREE.Mesh(earGeo, earMat); ear1.position.set(-0.5, 1.6, 0.4);
-            const ear2 = new THREE.Mesh(earGeo, earMat); ear2.position.set(0.5, 1.6, 0.4);
-            group.add(body, ear1, ear2);
+            const body = new THREE.Mesh(RG.body, RM.body); body.position.y = 0.7; body.castShadow = true;
+            const ear1 = new THREE.Mesh(RG.ear, RM.ear); ear1.position.set(-0.5, 1.6, 0.4);
+            const ear2 = new THREE.Mesh(RG.ear, RM.ear); ear2.position.set(0.5, 1.6, 0.4);
+            // Carita en la parte delantera (+Z)
+            const eyeLeft = new THREE.Mesh(RG.eye, RM.eye); eyeLeft.position.set(-0.35, 0.8, 0.801);
+            const eyeRight = new THREE.Mesh(RG.eye, RM.eye); eyeRight.position.set(0.35, 0.8, 0.801);
+            const mouth = new THREE.Mesh(RG.mouth, RM.mouth); mouth.position.set(0, 0.5, 0.801);
+            group.add(body, ear1, ear2, eyeLeft, eyeRight, mouth);
 
-            const hitbox = new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3.5), new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 }));
+            const hitbox = new THREE.Mesh(RG.hit, RM.hit);
             hitbox.position.y = 1.0; hitbox.userData = { isHitbox: true };
             group.add(hitbox);
             return group;
@@ -351,14 +444,13 @@
             rabbitsCaught = 0; rabbitsEscaped = 0; rabbitsSpawned = 0;
             updateUI(); msgBox.style.display = 'none';
 
-            const spawnTimer = setInterval(() => {
-                if (!isPlaying || isPaused || rabbitsSpawned >= level) {
-                    if(!isPlaying || rabbitsSpawned >= level) clearInterval(spawnTimer);
-                    return;
-                }
+            clearInterval(spawnTimer);
+            spawnTimer = setInterval(() => {
+                if (!isPlaying || rabbitsSpawned >= level) { clearInterval(spawnTimer); return; }
+                if (isPaused) return;
                 spawnRabbit();
                 rabbitsSpawned++;
-            }, Math.max(400, 1000 - (level * 30)));
+            }, Math.max(CONFIG.spawnMin, CONFIG.spawnStart - (level * CONFIG.spawnStep)));
         }
 
         function spawnRabbit() {
@@ -369,15 +461,12 @@
 
             rabbit.position.set(startX, 0, startZ);
             const target = holes[Math.floor(Math.random() * holes.length)];
-            
-            let baseSpeed = 5.0; 
-            if (level >= 4) { baseSpeed += (level - 3) * 1.35; }
-            const speed = baseSpeed + Math.random() * 2; 
 
-            rabbit.userData = {
-                target: target, speed: speed, hopOffset: Math.random() * 100,
-                active: true, hasJumped: false 
-            };
+            let baseSpeed = CONFIG.baseSpeed;
+            if (level >= CONFIG.speedFromLevel) baseSpeed += (level - (CONFIG.speedFromLevel - 1)) * CONFIG.speedPerLevel;
+            const speed = baseSpeed + Math.random() * CONFIG.speedRandom;
+
+            rabbit.userData = { target: target, speed: speed, hopOffset: Math.random() * 100, active: true, hasJumped: false };
             rabbit.lookAt(target.x, 0, target.z);
             scene.add(rabbit);
             rabbits.push(rabbit);
@@ -390,20 +479,17 @@
 
             if (finished >= total) {
                 isTransitioning = true;
-                let failed = false; let reason = "";
-
-                if (rabbitsEscaped === total) { failed = true; reason = "¡Se escaparon todos!"; }
-                else if (level >= 4) {
-                    const minNeeded = Math.ceil(total * 0.5);
-                    if (rabbitsCaught < minNeeded) { failed = true; reason = `Nivel ${level}: Solo atrapaste ${rabbitsCaught}.`; }
+                const need = neededToPass(level);
+                if (rabbitsCaught < need) {
+                    triggerTauntSequence(rabbitsCaught === 0 ? "¡Se escaparon todos!" : `Nivel ${level}: atrapaste ${rabbitsCaught} y necesitabas ${need}.`);
+                } else {
+                    levelTimeout = setTimeout(() => { level++; startLevel(); }, CONFIG.levelPause);
                 }
-
-                if (failed) { triggerTauntSequence(reason); }
-                else { setTimeout(() => { level++; startLevel(); }, 1000); }
             }
         }
 
         function triggerTauntSequence(reason) {
+            vibrate(500);
             isPlaying = false; isTaunting = true;
             rabbits.forEach(r => scene.remove(r)); rabbits = [];
 
@@ -411,7 +497,7 @@
             const tauntRabbit = createRabbitMesh();
             tauntRabbit.children = tauntRabbit.children.filter(c => !c.userData.isHitbox);
             tauntRabbit.position.set(tauntHole.x, -2, tauntHole.z); 
-            tauntRabbit.rotation.y = Math.PI; scene.add(tauntRabbit);
+            scene.add(tauntRabbit);
 
             let phase = 0; let tauntTime = 0;
             const tauntAnim = setInterval(() => {
@@ -432,13 +518,25 @@
 
         // --- Audio ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = audioCtx.createGain(); master.connect(audioCtx.destination);
+        let muted = false;
+        try { muted = localStorage.getItem('pimPamRabbit_mute') === '1'; } catch (e) {}
+        master.gain.value = muted ? 0 : 1;
+        muteBtn.innerText = muted ? '🔇' : '🔊';
+        function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+        window.toggleMute = function() {
+            muted = !muted;
+            master.gain.value = muted ? 0 : 1;
+            muteBtn.innerText = muted ? '🔇' : '🔊';
+            try { localStorage.setItem('pimPamRabbit_mute', muted ? '1' : '0'); } catch (e) {}
+        };
         
         function playTauntSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const now = audioCtx.currentTime;
             [0, 0.15, 0.3].forEach((delay, i) => {
                 const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.connect(gain); gain.connect(master);
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(800 + (i % 2 === 0 ? 0 : 200), now + delay); 
                 osc.frequency.linearRampToValueAtTime(600, now + delay + 0.1);
@@ -451,7 +549,7 @@
             if (audioCtx.state === 'suspended') return;
             if (Math.random() > 0.4) return; 
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(master);
             osc.type = 'sine';
             const now = audioCtx.currentTime;
             osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(450, now + 0.1);
@@ -462,7 +560,7 @@
         function playShotSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(master);
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
@@ -487,7 +585,7 @@
             mouse.y = -(y / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children, true);
+            const intersects = raycaster.intersectObjects(rabbits, true);
 
             for (let hit of intersects) {
                 let obj = hit.object;
@@ -497,7 +595,7 @@
                     obj.userData.active = false;
                     const tempMesh = obj.clone();
                     tempMesh.children = tempMesh.children.filter(c => !c.userData.isHitbox);
-                    tempMesh.children.forEach(c => { if(c.material) { c.material = c.material.clone(); c.material.color.set(0xff0000); } });
+                    tempMesh.children.forEach(c => { c.material = RM.dead; });
                     scene.add(tempMesh);
                     scene.remove(obj);
                     
@@ -507,7 +605,7 @@
                         if(s <= 0) { scene.remove(tempMesh); clearInterval(deathAnim); }
                     }, 30);
 
-                    score += 10; rabbitsCaught++;
+                    score += CONFIG.points; rabbitsCaught++; vibrate(40);
                     playShotSound(); checkLevelEnd();
                     break; 
                 }
@@ -522,13 +620,15 @@
         window.addEventListener('mousedown', (e) => { onInput(e.clientX, e.clientY); });
 
         window.restartGame = function() {
+            clearTimers();
             rabbits.forEach(r => scene.remove(r)); rabbits = [];
             level = 1; score = 0;
             uiDiv.style.display = 'block';
             startLevel();
         };
 
-        const clock = new THREE.Clock();
+        const clock = new THREE.Clock(); let gameTime = 0;
+        const _dir = new THREE.Vector3(); const _flat = new THREE.Vector3();
 
         function animate() {
             requestAnimationFrame(animate);
@@ -539,10 +639,11 @@
                 if(c.position.x > 150) c.position.x = -150;
             });
 
-            if(isPaused || isTaunting) { renderer.render(scene, camera); return; }
-
-            const delta = clock.getDelta();
-            const time = clock.getElapsedTime();
+            // El delta se consume siempre y se limita: evita saltos tras una pausa o al volver a la pestaña
+            const delta = Math.min(clock.getDelta(), 0.05);
+            if (isPaused || isTaunting) { renderer.render(scene, camera); return; }
+            gameTime += delta;
+            const time = gameTime;
 
             for (let i = rabbits.length - 1; i >= 0; i--) {
                 const r = rabbits[i];
@@ -552,13 +653,14 @@
                 }
 
                 const target = r.userData.target;
-                const dir = new THREE.Vector3().subVectors(target, r.position).normalize();
+                _dir.subVectors(target, r.position).normalize();
                 
-                r.position.add(dir.multiplyScalar(r.userData.speed * delta));
+                r.position.addScaledVector(_dir, r.userData.speed * delta);
                 const sineVal = Math.sin(time * 12 + r.userData.hopOffset);
                 r.position.y = Math.abs(sineVal) * 1.2;
-                r.rotation.x = Math.sin(time * 24 + r.userData.hopOffset) * 0.2;
+                
                 r.lookAt(target.x, 0, target.z);
+                r.rotateX(Math.sin(time * 24 + r.userData.hopOffset) * 0.2);
 
                 if (Math.abs(sineVal) < 0.2 && !r.userData.hasJumped) {
                     playJumpSound(); r.userData.hasJumped = true; 
@@ -566,7 +668,7 @@
                     r.userData.hasJumped = false; 
                 }
 
-                if (new THREE.Vector3(r.position.x, 0, r.position.z).distanceTo(target) < 1.0) {
+                if (_flat.set(r.position.x, 0, r.position.z).distanceTo(target) < 1.0) {
                     scene.remove(r); r.userData.active = false;
                     rabbitsEscaped++; checkLevelEnd();
                 }
@@ -579,6 +681,8 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRecord(); window.pauseGame(); } });
 
         animate(); 
     </script>
