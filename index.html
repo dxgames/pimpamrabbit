@@ -53,6 +53,7 @@
             padding: 5px 20px; border-radius: 15px;
         }
         
+        button.selected { outline: 3px solid #ffeb3b; outline-offset: 2px; }
         .overlay-screen {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(20, 20, 20, 0.95); z-index: 40;
@@ -123,48 +124,64 @@
     <div id="main-menu">
         <img src="https://i.postimg.cc/26vHpP1k/titulo.png" alt="Pim-Pam-Rabbit" id="game-title-img">
         <div id="menu-record" class="record-display">RÉCORD: 0</div>
-        <button onclick="startGame()">JUGAR</button>
-        <button class="secondary" onclick="toggleAbout(true)">Acerca de</button>
+        <button data-i18n="play" onclick="startGame()">JUGAR</button>
+        <button class="secondary" data-i18n="settings" onclick="toggleSettings(true)">Ajustes</button>
+        <button class="secondary" data-i18n="about" onclick="toggleAbout(true)">Acerca de</button>
     </div>
 
-            <div id="about-screen" class="overlay-screen">
-        <h2>Acerca de</h2>
+    <div id="settings-screen" class="overlay-screen">
+        <h2 data-i18n="settings">Ajustes</h2>
+        <button class="secondary" onclick="toggleLangOptions()">🌐 <span data-i18n="language">IDIOMA</span></button>
+        <div id="lang-options" style="display: none; flex-direction: column; align-items: center;">
+            <button id="lang-es" onclick="setLang('es')">ESPAÑOL</button>
+            <button id="lang-en" onclick="setLang('en')">ENGLISH</button>
+        </div>
+        <button class="secondary" data-i18n="back" onclick="toggleSettings(false)">VOLVER</button>
+    </div>
+
+    <div id="about-screen" class="overlay-screen">
+        <h2 data-i18n="about">Acerca de</h2>
         <div class="about-text" style="margin-bottom: 15px;">
-            Creado por <strong>DX GAMES</strong><br>
-            Versión: v1.0.5<br><br>
-            ¡GRACIAS POR JUGAR!
-            
+            <span data-i18n="createdBy">Creado por <strong>DX GAMES</strong></span><br>
+            <span data-i18n="version">Versión: v1.0.6</span><br><br>
+            <span data-i18n="thanks">¡GRACIAS POR JUGAR!</span>
+
             <!-- CAJA DE REGISTRO DE CAMBIOS -->
             <div class="changelog">
-                <h3>REGISTRO DE CAMBIOS</h3>
-                
+                <h3 data-i18n="changelog">REGISTRO DE CAMBIOS</h3>
+
+                <div class="version-title">v1.0.6</div>
+                <ul>
+                    <li data-i18n="c106a">Se tradujo todo el juego al inglés.</li>
+                    <li data-i18n="c106b">Se agregó una nueva opción de idioma a los ajustes del juego para cambiar el idioma del juego.</li>
+                    <li data-i18n="c106c">Se añadieron los idiomas español e inglés a los nuevos ajustes de idioma.</li>
+                </ul>
+
                 <div class="version-title">v1.0.5</div>
                 <ul>
-                    <li>Se añadieron caritas a los conejos.</li>
-                    <li>Varios errores han sido corregidos.</li>
-                    <li>Se optimizó la experiencia de juego.</li>
-                    <li>Se mejoró la animación de los conejos al saltar.</li>
-                    <li>Se añadió un botón para silenciar el sonido del juego.</li>
-<li>Se añadio un nuevo sistema de vibración al tocar un conejo y al perder el juego.</li>
+                    <li data-i18n="c105a">Se añadieron caritas a los conejos.</li>
+                    <li data-i18n="c105b">Varios errores han sido corregidos.</li>
+                    <li data-i18n="c105c">Se optimizó la experiencia de juego.</li>
+                    <li data-i18n="c105d">Se mejoró la animación de los conejos al saltar.</li>
+                    <li data-i18n="c105e">Se añadió un botón para silenciar el sonido del juego.</li>
+                    <li data-i18n="c105f">Se añadio un nuevo sistema de vibración al tocar un conejo y al perder el juego.</li>
                 </ul>
-                
-                
             </div>
         </div>
-        <button class="secondary" onclick="toggleAbout(false)">VOLVER</button>
+        <button class="secondary" data-i18n="back" onclick="toggleAbout(false)">VOLVER</button>
     </div>
 
     <div id="pause-menu" class="overlay-screen">
-        <h2 style="color: #fff;">PAUSA</h2>
-        <button onclick="resumeGame()">CONTINUAR</button>
-        <button class="danger" onclick="exitToMenu()">MENÚ PRINCIPAL</button>
+        <h2 style="color: #fff;" data-i18n="pause">PAUSA</h2>
+        <button data-i18n="resume" onclick="resumeGame()">CONTINUAR</button>
+        <button class="danger" data-i18n="mainMenu" onclick="exitToMenu()">MENÚ PRINCIPAL</button>
     </div>
 
     <div id="ui">
         <div id="score-container">
             <div id="score">0</div>
             <div id="level-info">NIVEL 1 | 0 / 1</div>
-            <div id="hint">¡Toca a los conejos antes de que lleguen a su hoyo!</div>
+            <div id="hint" data-i18n="hint">¡Toca a los conejos antes de que lleguen a su hoyo!</div>
         </div>
         <button id="mute-btn" onclick="toggleMute()">🔊</button>
         <button id="pause-btn" onclick="pauseGame()">⏸️</button>
@@ -174,8 +191,8 @@
         <h2 id="msg-title">GAME OVER</h2>
         <p id="msg-desc">Se escaparon.</p>
         <div id="final-record" style="font-size: 16px; color: #ffeb3b; margin-bottom: 20px;"></div>
-        <button onclick="restartGame()">REINTENTAR</button>
-        <button class="secondary" onclick="exitToMenu()">MENÚ</button>
+        <button data-i18n="retry" onclick="restartGame()">REINTENTAR</button>
+        <button class="secondary" data-i18n="menu" onclick="exitToMenu()">MENÚ</button>
     </div>
 
     <script type="importmap">
@@ -346,10 +363,57 @@
         let rabbits = []; let rabbitsCaught = 0; let rabbitsEscaped = 0; let rabbitsSpawned = 0;
         let isPlaying = false; let isPaused = false; let isTransitioning = false; let isTaunting = false;
         
+        // --- Idiomas / Languages ---
+        const I18N = {
+            es: {
+                play: "JUGAR", settings: "Ajustes", about: "Acerca de", language: "IDIOMA", back: "VOLVER",
+                createdBy: "Creado por <strong>DX GAMES</strong>", version: "Versión: v1.0.6", thanks: "¡GRACIAS POR JUGAR!",
+                changelog: "REGISTRO DE CAMBIOS",
+                c106a: "Se tradujo todo el juego al inglés.",
+                c106b: "Se agregó una nueva opción de idioma a los ajustes del juego para cambiar el idioma del juego.",
+                c106c: "Se añadieron los idiomas español e inglés a los nuevos ajustes de idioma.",
+                c105a: "Se añadieron caritas a los conejos.", c105b: "Varios errores han sido corregidos.",
+                c105c: "Se optimizó la experiencia de juego.", c105d: "Se mejoró la animación de los conejos al saltar.",
+                c105e: "Se añadió un botón para silenciar el sonido del juego.",
+                c105f: "Se añadio un nuevo sistema de vibración al tocar un conejo y al perder el juego.",
+                pause: "PAUSA", resume: "CONTINUAR", mainMenu: "MENÚ PRINCIPAL",
+                hint: "¡Toca a los conejos antes de que lleguen a su hoyo!",
+                retry: "REINTENTAR", menu: "MENÚ", lost: "¡PERDISTE!", score: "Puntuación", best: "Mejor Récord",
+                record: n => `RÉCORD: ${n}`,
+                level: (l, c, n) => `NIVEL ${l} | ${c} / ${n} (de ${l} 🐰)`,
+                allEscaped: "¡Se escaparon todos!",
+                needMore: (l, c, n) => `Nivel ${l}: atrapaste ${c} y necesitabas ${n}.`
+            },
+            en: {
+                play: "PLAY", settings: "Settings", about: "About", language: "LANGUAGE", back: "BACK",
+                createdBy: "Created by <strong>DX GAMES</strong>", version: "Version: v1.0.6", thanks: "THANKS FOR PLAYING!",
+                changelog: "CHANGELOG",
+                c106a: "The whole game was translated into English.",
+                c106b: "A new language option was added to the game settings to change the game's language.",
+                c106c: "Spanish and English were added to the new language settings.",
+                c105a: "Faces were added to the rabbits.", c105b: "Several bugs have been fixed.",
+                c105c: "The game experience was optimized.", c105d: "The rabbits' jumping animation was improved.",
+                c105e: "A button to mute the game's sound was added.",
+                c105f: "A new vibration system was added when tapping a rabbit and when losing the game.",
+                pause: "PAUSED", resume: "RESUME", mainMenu: "MAIN MENU",
+                hint: "Tap the rabbits before they reach their hole!",
+                retry: "TRY AGAIN", menu: "MENU", lost: "YOU LOST!", score: "Score", best: "Best Score",
+                record: n => `HIGH SCORE: ${n}`,
+                level: (l, c, n) => `LEVEL ${l} | ${c} / ${n} (of ${l} 🐰)`,
+                allEscaped: "They all escaped!",
+                needMore: (l, c, n) => `Level ${l}: you caught ${c} but needed ${n}.`
+            }
+        };
+        let lang = (navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en';
+        try { const saved = localStorage.getItem('pimPamRabbit_lang'); if (saved === 'es' || saved === 'en') lang = saved; } catch (e) {}
+        const t = (key, ...a) => { const v = I18N[lang][key]; return typeof v === 'function' ? v(...a) : v; };
+
         // --- UI ---
         const uiDiv = document.getElementById('ui');
         const mainMenu = document.getElementById('main-menu');
         const aboutScreen = document.getElementById('about-screen');
+        const settingsScreen = document.getElementById('settings-screen');
+        const langOptions = document.getElementById('lang-options');
         const pauseMenu = document.getElementById('pause-menu');
         const uiScore = document.getElementById('score');
         const uiLevel = document.getElementById('level-info');
@@ -361,7 +425,7 @@
         const uiHint = document.getElementById('hint');
         const muteBtn = document.getElementById('mute-btn');
 
-        function updateRecordDisplay() { menuRecord.innerText = `RÉCORD: ${highScore}`; }
+        function updateRecordDisplay() { menuRecord.innerText = t('record', highScore); }
         updateRecordDisplay();
 
         function saveRecord() {
@@ -376,6 +440,24 @@
         };
 
         window.toggleAbout = function(show) { aboutScreen.style.display = show ? 'flex' : 'none'; };
+
+        function applyLang() {
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
+            document.getElementById('lang-es').classList.toggle('selected', lang === 'es');
+            document.getElementById('lang-en').classList.toggle('selected', lang === 'en');
+            updateRecordDisplay(); updateUI();
+        }
+        window.toggleSettings = function(show) {
+            settingsScreen.style.display = show ? 'flex' : 'none';
+            if (!show) langOptions.style.display = 'none';
+        };
+        window.toggleLangOptions = function() { langOptions.style.display = langOptions.style.display === 'flex' ? 'none' : 'flex'; };
+        window.setLang = function(l) {
+            lang = l;
+            try { localStorage.setItem('pimPamRabbit_lang', l); } catch (e) {}
+            applyLang();
+        };
 
         window.pauseGame = function() {
             if(!isPlaying || isTaunting) return;
@@ -394,7 +476,7 @@
         };
 
         function updateUI() {
-            uiLevel.innerText = `NIVEL ${level} | ${rabbitsCaught} / ${neededToPass(level)} (de ${level} 🐰)`;
+            uiLevel.innerText = t('level', level, rabbitsCaught, neededToPass(level));
             uiScore.innerText = score;
             uiHint.style.display = level === 1 ? 'block' : 'none';
         }
@@ -481,7 +563,7 @@
                 isTransitioning = true;
                 const need = neededToPass(level);
                 if (rabbitsCaught < need) {
-                    triggerTauntSequence(rabbitsCaught === 0 ? "¡Se escaparon todos!" : `Nivel ${level}: atrapaste ${rabbitsCaught} y necesitabas ${need}.`);
+                    triggerTauntSequence(rabbitsCaught === 0 ? t('allEscaped') : t('needMore', level, rabbitsCaught, need));
                 } else {
                     levelTimeout = setTimeout(() => { level++; startLevel(); }, CONFIG.levelPause);
                 }
@@ -569,8 +651,8 @@
 
         function gameOver(reason) {
             saveRecord();
-            msgTitle.innerText = "¡PERDISTE!"; msgDesc.innerText = reason;
-            finalRecord.innerHTML = `Puntuación: <strong>${score}</strong><br>Mejor Récord: <strong>${highScore}</strong>`;
+            msgTitle.innerText = t('lost'); msgDesc.innerText = reason;
+            finalRecord.innerHTML = `${t('score')}: <strong>${score}</strong><br>${t('best')}: <strong>${highScore}</strong>`;
             msgBox.style.display = 'block'; uiDiv.style.display = 'none';
         }
 
@@ -681,6 +763,8 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        applyLang();
 
         document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRecord(); window.pauseGame(); } });
 
