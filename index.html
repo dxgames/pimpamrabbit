@@ -118,6 +118,22 @@
         }
         .changelog::-webkit-scrollbar { width: 6px; }
         .changelog::-webkit-scrollbar-thumb { background: #4caf50; border-radius: 10px; }
+        /* --- COMBO Y PUNTOS FLOTANTES (v1.1.0) --- */
+        #combo-display {
+            position: absolute; top: 26%; left: 0; width: 100%; text-align: center;
+            font-size: 44px; font-weight: 900; color: #ffeb3b;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.7); opacity: 0; pointer-events: none; z-index: 12;
+        }
+        #combo-display.pop { animation: comboPop 0.5s ease; }
+        @keyframes comboPop { 0% { transform: scale(0.6); } 40% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .float-points {
+            position: fixed; transform: translate(-50%, -50%); pointer-events: none; z-index: 60;
+            font-size: 30px; font-weight: 900; color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+            animation: floatUp 1s ease-out forwards;
+        }
+        .float-points.gold { color: #ffd700; font-size: 40px; }
+        @keyframes floatUp { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -90px; } }
 </style>
 </head>
 <body>
@@ -143,12 +159,21 @@
         <h2 data-i18n="about">Acerca de</h2>
         <div class="about-text" style="margin-bottom: 15px;">
             <span data-i18n="createdBy">Creado por <strong>DX GAMES</strong></span><br>
-            <span data-i18n="version">Versión: v1.0.6</span><br><br>
+            <span data-i18n="version">Versión: v1.1.0</span><br><br>
             <span data-i18n="thanks">¡GRACIAS POR JUGAR!</span>
 
             <!-- CAJA DE REGISTRO DE CAMBIOS -->
             <div class="changelog">
                 <h3 data-i18n="changelog">REGISTRO DE CAMBIOS</h3>
+
+                <div class="version-title">v1.1.0</div>
+                <ul>
+                    <li data-i18n="c110a">¡Nuevo conejo dorado! Es extremadamente raro, muy rápido, brilla y vale 100 puntos.</li>
+                    <li data-i18n="c110b">Nuevo sistema de combos: a partir de 2 conejos seguidos aparece COMBO X2, X3, etc. Si se escapa un conejo, pierdes el combo.</li>
+                    <li data-i18n="c110c">Ahora los puntos aparecen flotando donde tocas.</li>
+                    <li data-i18n="c110d">El estanque ahora tiene un suave efecto de agua en movimiento.</li>
+                    <li data-i18n="c110e">Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con el botón de silencio).</li>
+                </ul>
 
                 <div class="version-title">v1.0.6</div>
                 <ul>
@@ -183,6 +208,7 @@
             <div id="level-info">NIVEL 1 | 0 / 1</div>
             <div id="hint" data-i18n="hint">¡Toca a los conejos antes de que lleguen a su hoyo!</div>
         </div>
+        <div id="combo-display"></div>
         <button id="mute-btn" onclick="toggleMute()">🔊</button>
         <button id="pause-btn" onclick="pauseGame()">⏸️</button>
     </div>
@@ -294,6 +320,28 @@
         pond.position.set(0, 0.1, pondZ);
         scene.add(pond);
 
+        // --- Ondas suaves del estanque (v1.1.0) ---
+        const pondColorA = new THREE.Color(0x0077be);
+        const pondColorB = new THREE.Color(0x00a5e8);
+        const ripples = [];
+        function randomPondPoint() {
+            const r = Math.sqrt(Math.random()) * (pondRadius - 6);
+            const a = Math.random() * Math.PI * 2;
+            return { x: Math.cos(a) * r, z: pondZ + Math.sin(a) * r };
+        }
+        for (let i = 0; i < 3; i++) {
+            const ring = new THREE.Mesh(
+                new THREE.RingGeometry(0.9, 1.15, 40),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false })
+            );
+            ring.rotation.x = -Math.PI / 2;
+            const p = randomPondPoint();
+            ring.position.set(p.x, 0.12, p.z);
+            ring.userData = { phase: i / 3, speed: 0.12 };
+            scene.add(ring);
+            ripples.push(ring);
+        }
+
         // --- Bosque y Decoración (árboles instanciados: 4 draw calls en vez de cientos) ---
         const treeData = [];
 
@@ -359,7 +407,7 @@
         // --- Variables ---
         let highScore = 0;
         try { highScore = parseInt(localStorage.getItem('pimPamRabbit_record'), 10) || 0; } catch (e) {}
-        let level = 1; let score = 0;
+        let level = 1; let score = 0; let combo = 0;
         let rabbits = []; let rabbitsCaught = 0; let rabbitsEscaped = 0; let rabbitsSpawned = 0;
         let isPlaying = false; let isPaused = false; let isTransitioning = false; let isTaunting = false;
         
@@ -367,11 +415,16 @@
         const I18N = {
             es: {
                 play: "JUGAR", settings: "Ajustes", about: "Acerca de", language: "IDIOMA", back: "VOLVER",
-                createdBy: "Creado por <strong>DX GAMES</strong>", version: "Versión: v1.0.6", thanks: "¡GRACIAS POR JUGAR!",
+                createdBy: "Creado por <strong>DX GAMES</strong>", version: "Versión: v1.1.0", thanks: "¡GRACIAS POR JUGAR!",
                 changelog: "REGISTRO DE CAMBIOS",
                 c106a: "Se tradujo todo el juego al inglés.",
                 c106b: "Se agregó una nueva opción de idioma a los ajustes del juego para cambiar el idioma del juego.",
                 c106c: "Se añadieron los idiomas español e inglés a los nuevos ajustes de idioma.",
+                c110a: "¡Nuevo conejo dorado! Es extremadamente raro, muy rápido, brilla y vale 100 puntos.",
+                c110b: "Nuevo sistema de combos: a partir de 2 conejos seguidos aparece COMBO X2, X3, etc. Si se escapa un conejo, pierdes el combo.",
+                c110c: "Ahora los puntos aparecen flotando donde tocas.",
+                c110d: "El estanque ahora tiene un suave efecto de agua en movimiento.",
+                c110e: "Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con el botón de silencio).",
                 c105a: "Se añadieron caritas a los conejos.", c105b: "Varios errores han sido corregidos.",
                 c105c: "Se optimizó la experiencia de juego.", c105d: "Se mejoró la animación de los conejos al saltar.",
                 c105e: "Se añadió un botón para silenciar el sonido del juego.",
@@ -386,11 +439,16 @@
             },
             en: {
                 play: "PLAY", settings: "Settings", about: "About", language: "LANGUAGE", back: "BACK",
-                createdBy: "Created by <strong>DX GAMES</strong>", version: "Version: v1.0.6", thanks: "THANKS FOR PLAYING!",
+                createdBy: "Created by <strong>DX GAMES</strong>", version: "Version: v1.1.0", thanks: "THANKS FOR PLAYING!",
                 changelog: "CHANGELOG",
                 c106a: "The whole game was translated into English.",
                 c106b: "A new language option was added to the game settings to change the game's language.",
                 c106c: "Spanish and English were added to the new language settings.",
+                c110a: "New golden rabbit! Extremely rare, super fast, glowing and worth 100 points.",
+                c110b: "New combo system: from 2 squashes in a row, COMBO X2, X3, etc. appears. If a rabbit escapes, you lose the combo.",
+                c110c: "Points now float up where you tap.",
+                c110d: "The pond now has a gentle moving water effect.",
+                c110e: "New music: a gentle song in the main menu and background music during gameplay (muted with the sound button).",
                 c105a: "Faces were added to the rabbits.", c105b: "Several bugs have been fixed.",
                 c105c: "The game experience was optimized.", c105d: "The rabbits' jumping animation was improved.",
                 c105e: "A button to mute the game's sound was added.",
@@ -424,6 +482,25 @@
         const menuRecord = document.getElementById('menu-record');
         const uiHint = document.getElementById('hint');
         const muteBtn = document.getElementById('mute-btn');
+        const comboDisplay = document.getElementById('combo-display');
+        let comboTimeout = null;
+        function showCombo() {
+            if (combo < 2) return;
+            comboDisplay.innerText = `¡COMBO X${combo}!`;
+            comboDisplay.style.opacity = 1;
+            comboDisplay.classList.remove('pop'); void comboDisplay.offsetWidth; comboDisplay.classList.add('pop');
+            clearTimeout(comboTimeout);
+            comboTimeout = setTimeout(() => { comboDisplay.style.opacity = 0; }, 1000);
+        }
+        function hideCombo() { clearTimeout(comboTimeout); comboDisplay.style.opacity = 0; }
+        function showFloatingPoints(x, y, text, isGold) {
+            const el = document.createElement('div');
+            el.className = 'float-points' + (isGold ? ' gold' : '');
+            el.innerText = text;
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
 
         function updateRecordDisplay() { menuRecord.innerText = t('record', highScore); }
         updateRecordDisplay();
@@ -462,17 +539,20 @@
         window.pauseGame = function() {
             if(!isPlaying || isTaunting) return;
             isPaused = true; pauseMenu.style.display = 'flex';
+            pauseMusic();
         };
 
-        window.resumeGame = function() { isPaused = false; pauseMenu.style.display = 'none'; };
+        window.resumeGame = function() { isPaused = false; pauseMenu.style.display = 'none'; playGameMusic(); };
         
         window.exitToMenu = function() {
             clearTimers();
             saveRecord();
+            combo = 0; hideCombo();
             pauseMenu.style.display = 'none'; msgBox.style.display = 'none'; uiDiv.style.display = 'none';
             rabbits.forEach(r => scene.remove(r)); rabbits = [];
             isPlaying = false; isPaused = false; isTaunting = false;
             mainMenu.style.display = 'flex'; updateRecordDisplay();
+            playMenuMusic();
         };
 
         function updateUI() {
@@ -484,6 +564,7 @@
         // --- Configuración de dificultad (ajusta aquí para balancear) ---
         const CONFIG = {
             points: 10, levelPause: 1000,
+            goldenPoints: 100, goldenChance: 0.02, goldenSpeed: 2.2,
             spawnStart: 1000, spawnStep: 30, spawnMin: 400,
             baseSpeed: 5, speedFromLevel: 4, speedPerLevel: 1.35, speedRandom: 2,
             ratioFromLevel: 4, ratio: 0.5
@@ -504,9 +585,26 @@
             hit: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }), dead: new THREE.MeshStandardMaterial({ color: 0xff0000 })
         };
 
-        function createRabbitMesh() {
+        let glowTexture = null;
+        function makeGlowTexture() {
+            if (glowTexture) return glowTexture;
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const g = c.getContext('2d');
+            const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+            grad.addColorStop(0, 'rgba(255, 220, 100, 0.9)');
+            grad.addColorStop(0.4, 'rgba(255, 200, 60, 0.35)');
+            grad.addColorStop(1, 'rgba(255, 200, 60, 0)');
+            g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+            glowTexture = new THREE.CanvasTexture(c);
+            return glowTexture;
+        }
+
+        function createRabbitMesh(isGolden = false) {
             const group = new THREE.Group();
-            const body = new THREE.Mesh(RG.body, RM.body); body.position.y = 0.7; body.castShadow = true;
+            const bodyMat = isGolden
+                ? new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xff9500, emissiveIntensity: 0.55, roughness: 0.35 })
+                : RM.body;
+            const body = new THREE.Mesh(RG.body, bodyMat); body.position.y = 0.7; body.castShadow = true;
             const ear1 = new THREE.Mesh(RG.ear, RM.ear); ear1.position.set(-0.5, 1.6, 0.4);
             const ear2 = new THREE.Mesh(RG.ear, RM.ear); ear2.position.set(0.5, 1.6, 0.4);
             // Carita en la parte delantera (+Z)
@@ -514,6 +612,14 @@
             const eyeRight = new THREE.Mesh(RG.eye, RM.eye); eyeRight.position.set(0.35, 0.8, 0.801);
             const mouth = new THREE.Mesh(RG.mouth, RM.mouth); mouth.position.set(0, 0.5, 0.801);
             group.add(body, ear1, ear2, eyeLeft, eyeRight, mouth);
+
+            if (isGolden) {
+                const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xffd700, transparent: true, opacity: 0.7, depthWrite: false }));
+                glow.scale.set(5, 5, 1);
+                glow.position.y = 1.0;
+                glow.userData = { isGlow: true };
+                group.add(glow);
+            }
 
             const hitbox = new THREE.Mesh(RG.hit, RM.hit);
             hitbox.position.y = 1.0; hitbox.userData = { isHitbox: true };
@@ -536,7 +642,8 @@
         }
 
         function spawnRabbit() {
-            const rabbit = createRabbitMesh();
+            const isGolden = Math.random() < CONFIG.goldenChance;
+            const rabbit = createRabbitMesh(isGolden);
             const side = Math.random() > 0.5 ? 1 : -1;
             const startX = side * (18 + Math.random() * 10);
             const startZ = -55 + (Math.random() - 0.5) * 10;
@@ -548,7 +655,8 @@
             if (level >= CONFIG.speedFromLevel) baseSpeed += (level - (CONFIG.speedFromLevel - 1)) * CONFIG.speedPerLevel;
             const speed = baseSpeed + Math.random() * CONFIG.speedRandom;
 
-            rabbit.userData = { target: target, speed: speed, hopOffset: Math.random() * 100, active: true, hasJumped: false };
+            rabbit.userData = { target: target, speed: isGolden ? speed * CONFIG.goldenSpeed : speed, hopOffset: Math.random() * 100, active: true, hasJumped: false, isGolden: isGolden, points: isGolden ? CONFIG.goldenPoints : CONFIG.points };
+            if (isGolden) rabbit.userData.glow = rabbit.children.find(c => c.userData && c.userData.isGlow);
             rabbit.lookAt(target.x, 0, target.z);
             scene.add(rabbit);
             rabbits.push(rabbit);
@@ -573,6 +681,7 @@
         function triggerTauntSequence(reason) {
             vibrate(500);
             isPlaying = false; isTaunting = true;
+            combo = 0; hideCombo();
             rabbits.forEach(r => scene.remove(r)); rabbits = [];
 
             const tauntHole = holes[2]; 
@@ -612,6 +721,51 @@
             muteBtn.innerText = muted ? '🔇' : '🔊';
             try { localStorage.setItem('pimPamRabbit_mute', muted ? '1' : '0'); } catch (e) {}
         };
+        // --- Música de fondo: audio/music/menu.mp3 (menú) y audio/music/music1.mp3 (juego) ---
+        // Los archivos viven en el repositorio del juego (audio/music/). Si aún no están
+        // subidos, la música simplemente no suena y el juego sigue funcionando normal.
+        const menuMusic = new Audio('audio/music/menu.mp3');
+        const gameMusic = new Audio('audio/music/music1.mp3');
+        menuMusic.loop = true; gameMusic.loop = true;
+        menuMusic.preload = 'auto'; gameMusic.preload = 'auto';
+        menuMusic.volume = 0.5; gameMusic.volume = 0.35;
+        let musicReady = { menu: false, game: false };
+        function connectMusic(audioEl, key) {
+            try {
+                audioCtx.createMediaElementSource(audioEl).connect(master);
+                musicReady[key] = true;
+            } catch (e) { musicReady[key] = false; }
+        }
+        connectMusic(menuMusic, 'menu');
+        connectMusic(gameMusic, 'game');
+        function tryPlay(audioEl) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            try {
+                const p = audioEl.play();
+                if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+        }
+        function playMenuMusic() {
+            if (!musicReady.menu) return;
+            if (!gameMusic.paused) gameMusic.pause();
+            if (menuMusic.paused) { menuMusic.currentTime = 0; tryPlay(menuMusic); }
+        }
+        function playGameMusic() {
+            if (!musicReady.game) return;
+            if (!menuMusic.paused) menuMusic.pause();
+            if (gameMusic.paused) { gameMusic.currentTime = 0; tryPlay(gameMusic); }
+        }
+        function pauseMusic() {
+            if (!menuMusic.paused) menuMusic.pause();
+            if (!gameMusic.paused) gameMusic.pause();
+        }
+        // El navegador bloquea el audio antes del primer gesto del jugador:
+        // la música del menú arranca con el primer toque en pantalla.
+        window.addEventListener('pointerdown', function startMenuMusicOnce() {
+            if (!isPlaying && !isTaunting) playMenuMusic();
+        }, { once: true });
+        playMenuMusic();
+
         
         function playTauntSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -649,11 +803,25 @@
             osc.start(); osc.stop(audioCtx.currentTime + 0.2);
         }
 
+        function playGoldenSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            [880, 1174, 1568].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(master);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + i * 0.07);
+                gain.gain.setValueAtTime(0.15, now + i * 0.07); gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.07 + 0.15);
+                osc.start(now + i * 0.07); osc.stop(now + i * 0.07 + 0.18);
+            });
+        }
+
         function gameOver(reason) {
             saveRecord();
             msgTitle.innerText = t('lost'); msgDesc.innerText = reason;
             finalRecord.innerHTML = `${t('score')}: <strong>${score}</strong><br>${t('best')}: <strong>${highScore}</strong>`;
             msgBox.style.display = 'block'; uiDiv.style.display = 'none';
+            playMenuMusic();
         }
 
         // --- Input & Loop ---
@@ -676,7 +844,7 @@
                 if (obj.userData && obj.userData.active) {
                     obj.userData.active = false;
                     const tempMesh = obj.clone();
-                    tempMesh.children = tempMesh.children.filter(c => !c.userData.isHitbox);
+                    tempMesh.children = tempMesh.children.filter(c => !c.userData.isHitbox && !c.userData.isGlow);
                     tempMesh.children.forEach(c => { c.material = RM.dead; });
                     scene.add(tempMesh);
                     scene.remove(obj);
@@ -687,8 +855,13 @@
                         if(s <= 0) { scene.remove(tempMesh); clearInterval(deathAnim); }
                     }, 30);
 
-                    score += CONFIG.points; rabbitsCaught++; vibrate(40);
-                    playShotSound(); checkLevelEnd();
+                    const isGolden = !!obj.userData.isGolden;
+                    combo++;
+                    const gained = (obj.userData.points || CONFIG.points) * combo;
+                    score += gained; rabbitsCaught++; vibrate(40);
+                    showFloatingPoints(x, y, `+${gained}`, isGolden);
+                    if (isGolden) playGoldenSound(); else playShotSound();
+                    showCombo(); checkLevelEnd();
                     break; 
                 }
             }
@@ -704,8 +877,9 @@
         window.restartGame = function() {
             clearTimers();
             rabbits.forEach(r => scene.remove(r)); rabbits = [];
-            level = 1; score = 0;
+            level = 1; score = 0; combo = 0; hideCombo();
             uiDiv.style.display = 'block';
+            playGameMusic();
             startLevel();
         };
 
@@ -727,6 +901,22 @@
             gameTime += delta;
             const time = gameTime;
 
+            // Estanque con movimiento suave (v1.1.0)
+            const pondPhase = 0.5 + 0.5 * Math.sin(gameTime * 0.4);
+            pond.material.color.lerpColors(pondColorA, pondColorB, pondPhase * 0.6);
+            ripples.forEach(ring => {
+                ring.userData.phase += delta * ring.userData.speed;
+                if (ring.userData.phase > 1) {
+                    ring.userData.phase = 0;
+                    const p = randomPondPoint();
+                    ring.position.set(p.x, 0.12, p.z);
+                }
+                const ph = ring.userData.phase;
+                const rs = 1 + ph * 4;
+                ring.scale.set(rs, rs, 1);
+                ring.material.opacity = (1 - ph) * 0.3;
+            });
+
             for (let i = rabbits.length - 1; i >= 0; i--) {
                 const r = rabbits[i];
                 if (!r.userData.active) {
@@ -744,6 +934,13 @@
                 r.lookAt(target.x, 0, target.z);
                 r.rotateX(Math.sin(time * 24 + r.userData.hopOffset) * 0.2);
 
+                if (r.userData.isGolden && r.userData.glow) {
+                    const glow = r.userData.glow;
+                    glow.material.opacity = 0.55 + Math.sin(time * 6 + r.userData.hopOffset) * 0.25;
+                    const gs = 4.8 + Math.sin(time * 6 + r.userData.hopOffset) * 0.6;
+                    glow.scale.set(gs, gs, 1);
+                }
+
                 if (Math.abs(sineVal) < 0.2 && !r.userData.hasJumped) {
                     playJumpSound(); r.userData.hasJumped = true; 
                 } else if (Math.abs(sineVal) > 0.5) {
@@ -752,7 +949,7 @@
 
                 if (_flat.set(r.position.x, 0, r.position.z).distanceTo(target) < 1.0) {
                     scene.remove(r); r.userData.active = false;
-                    rabbitsEscaped++; checkLevelEnd();
+                    rabbitsEscaped++; combo = 0; hideCombo(); checkLevelEnd();
                 }
             }
             renderer.render(scene, camera);
