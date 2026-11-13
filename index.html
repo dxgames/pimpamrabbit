@@ -173,6 +173,7 @@
                     <li data-i18n="c110c">Ahora los puntos aparecen flotando donde tocas.</li>
                     <li data-i18n="c110d">El estanque ahora tiene un suave efecto de agua en movimiento.</li>
                     <li data-i18n="c110e">Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con el botón de silencio).</li>
+                    <li data-i18n="c110f">La música del menú ahora arranca desde que se abre el juego (se escucha en el primer toque) y se bajó un poco el volumen de las canciones.</li>
                 </ul>
 
                 <div class="version-title">v1.0.6</div>
@@ -425,6 +426,7 @@
                 c110c: "Ahora los puntos aparecen flotando donde tocas.",
                 c110d: "El estanque ahora tiene un suave efecto de agua en movimiento.",
                 c110e: "Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con el botón de silencio).",
+                c110f: "La música del menú ahora arranca desde que se abre el juego (se escucha en el primer toque) y se bajó un poco el volumen de las canciones.",
                 c105a: "Se añadieron caritas a los conejos.", c105b: "Varios errores han sido corregidos.",
                 c105c: "Se optimizó la experiencia de juego.", c105d: "Se mejoró la animación de los conejos al saltar.",
                 c105e: "Se añadió un botón para silenciar el sonido del juego.",
@@ -449,6 +451,7 @@
                 c110c: "Points now float up where you tap.",
                 c110d: "The pond now has a gentle moving water effect.",
                 c110e: "New music: a gentle song in the main menu and background music during gameplay (muted with the sound button).",
+                c110f: "The menu music now starts as soon as the game opens (audible from the first tap) and the songs' volume was lowered a bit.",
                 c105a: "Faces were added to the rabbits.", c105b: "Several bugs have been fixed.",
                 c105c: "The game experience was optimized.", c105d: "The rabbits' jumping animation was improved.",
                 c105e: "A button to mute the game's sound was added.",
@@ -719,6 +722,7 @@
             muted = !muted;
             master.gain.value = muted ? 0 : 1;
             muteBtn.innerText = muted ? '🔇' : '🔊';
+            if (typeof menuMusic !== 'undefined') { menuMusic.muted = muted; gameMusic.muted = muted; }
             try { localStorage.setItem('pimPamRabbit_mute', muted ? '1' : '0'); } catch (e) {}
         };
         // --- Música de fondo: audio/music/menu.mp3 (menú) y audio/music/music1.mp3 (juego) ---
@@ -728,7 +732,11 @@
         const gameMusic = new Audio('audio/music/music1.mp3');
         menuMusic.loop = true; gameMusic.loop = true;
         menuMusic.preload = 'auto'; gameMusic.preload = 'auto';
-        menuMusic.volume = 0.5; gameMusic.volume = 0.35;
+        menuMusic.volume = 0.35; gameMusic.volume = 0.25;
+        // Las canciones arrancan en silencio: los navegadores permiten
+        // reproducir audio silenciado sin gesto del jugador, así la música
+        // del menú ya está sonando al abrir el juego y se escucha en el primer toque.
+        menuMusic.muted = true; gameMusic.muted = true;
         let musicReady = { menu: false, game: false };
         function connectMusic(audioEl, key) {
             try {
@@ -759,11 +767,17 @@
             if (!menuMusic.paused) menuMusic.pause();
             if (!gameMusic.paused) gameMusic.pause();
         }
-        // El navegador bloquea el audio antes del primer gesto del jugador:
-        // la música del menú arranca con el primer toque en pantalla.
-        window.addEventListener('pointerdown', function startMenuMusicOnce() {
+        // Los navegadores no permiten que suene audio antes del primer gesto
+        // del jugador, así que la música del menú arranca en silencio al abrir
+        // el juego y se escucha en el primer toque en pantalla. Se reintenta
+        // en cada toque/tecla hasta que suene, por si el primero fue JUGAR.
+        function unlockAudio() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (!muted) { menuMusic.muted = false; gameMusic.muted = false; }
             if (!isPlaying && !isTaunting) playMenuMusic();
-        }, { once: true });
+        }
+        ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(ev =>
+            window.addEventListener(ev, unlockAudio));
         playMenuMusic();
 
         
