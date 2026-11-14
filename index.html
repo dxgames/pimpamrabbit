@@ -25,14 +25,15 @@
         #score { font-size: 60px; font-weight: 900; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.5); line-height: 1; margin: 0; }
         #level-info { font-size: 20px; color: #ffeb3b; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; text-shadow: 1px 1px 2px black; margin-top: 5px; }
         
-        #pause-btn, #mute-btn {
+        #pause-btn, #music-btn, #sound-btn {
             position: absolute; top: calc(5px + env(safe-area-inset-top, 0px)); right: 5px; min-width: 0; margin: 0; box-shadow: none; background: none; border: none;
             color: white; font-size: 35px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
             cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center;
             transition: transform 0.1s; padding: 10px;
         }
-        #pause-btn:active, #mute-btn:active { transform: scale(0.9); opacity: 0.8; }
-        #mute-btn { right: auto; left: 5px; }
+        #pause-btn:active, #music-btn:active, #sound-btn:active { transform: scale(0.9); opacity: 0.8; }
+        #music-btn { right: auto; left: 5px; }
+        #sound-btn { right: auto; left: 60px; }
         #hint { margin-top: 8px; font-size: 16px; color: #fff; text-shadow: 1px 1px 3px black; }
 
         #main-menu {
@@ -47,6 +48,25 @@
             animation: float 3s ease-in-out infinite;
         }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        /* --- PANTALLA DE INICIO (botón PLAY) --- */
+        #splash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, rgba(30,60,30,0.92), rgba(0,0,0,0.92)); z-index: 45;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        #splash.leaving { opacity: 0; transform: scale(1.12); pointer-events: none; }
+        #splash .splash-title-img {
+            max-width: 85%; height: auto; margin-bottom: 10px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        #splash .splash-sub {
+            font-size: 18px; color: #ffeb3b; margin-bottom: 30px; letter-spacing: 4px; font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        #splash .play-btn { font-size: 26px; padding: 18px 60px; animation: playPulse 1.2s ease-in-out infinite; }
+        @keyframes playPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
         .record-display {
             font-size: 22px; color: #ffeb3b; margin-bottom: 25px; font-weight: bold;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5);
@@ -137,7 +157,13 @@
 </style>
 </head>
 <body>
-    <div id="main-menu">
+    <div id="splash">
+        <img src="https://i.postimg.cc/26vHpP1k/titulo.png" alt="Pim-Pam-Rabbit" class="splash-title-img">
+        <div class="splash-sub">DX GAMES</div>
+        <button class="play-btn" data-i18n="splashPlay" onclick="enterGame()">▶ JUGAR</button>
+    </div>
+
+    <div id="main-menu" style="display: none;">
         <img src="https://i.postimg.cc/26vHpP1k/titulo.png" alt="Pim-Pam-Rabbit" id="game-title-img">
         <div id="menu-record" class="record-display">RÉCORD: 0</div>
         <button data-i18n="play" onclick="startGame()">JUGAR</button>
@@ -152,6 +178,8 @@
             <button id="lang-es" onclick="setLang('es')">ESPAÑOL</button>
             <button id="lang-en" onclick="setLang('en')">ENGLISH</button>
         </div>
+        <button class="secondary" id="settings-music-btn" onclick="toggleMusic()">🎵 MÚSICA: ON</button>
+        <button class="secondary" id="settings-sound-btn" onclick="toggleSound()">🔊 SONIDO: ON</button>
         <button class="secondary" data-i18n="back" onclick="toggleSettings(false)">VOLVER</button>
     </div>
 
@@ -172,8 +200,7 @@
                     <li data-i18n="c110b">Nuevo sistema de combos: a partir de 2 conejos seguidos aparece COMBO X2, X3, etc. Si se escapa un conejo, pierdes el combo.</li>
                     <li data-i18n="c110c">Ahora los puntos aparecen flotando donde tocas.</li>
                     <li data-i18n="c110d">El estanque ahora tiene un suave efecto de agua en movimiento.</li>
-                    <li data-i18n="c110e">Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con el botón de silencio).</li>
-                    <li data-i18n="c110f">La música del menú ahora suena al abrir el juego, como en Dreadwater, y se bajó un poco el volumen de las canciones.</li>
+                    <li data-i18n="c110e">Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con los botones de música y sonido).</li>
                 </ul>
 
                 <div class="version-title">v1.0.6</div>
@@ -210,7 +237,8 @@
             <div id="hint" data-i18n="hint">¡Toca a los conejos antes de que lleguen a su hoyo!</div>
         </div>
         <div id="combo-display"></div>
-        <button id="mute-btn" onclick="toggleMute()">🔊</button>
+        <button id="music-btn" onclick="toggleMusic()">🎵</button>
+        <button id="sound-btn" onclick="toggleSound()">🔊</button>
         <button id="pause-btn" onclick="pauseGame()">⏸️</button>
     </div>
 
@@ -416,6 +444,7 @@
         const I18N = {
             es: {
                 play: "JUGAR", settings: "Ajustes", about: "Acerca de", language: "IDIOMA", back: "VOLVER",
+                music: "MÚSICA", sound: "SONIDO", splashPlay: "▶ JUGAR",
                 createdBy: "Creado por <strong>DX GAMES</strong>", version: "Versión: v1.1.0", thanks: "¡GRACIAS POR JUGAR!",
                 changelog: "REGISTRO DE CAMBIOS",
                 c106a: "Se tradujo todo el juego al inglés.",
@@ -425,8 +454,7 @@
                 c110b: "Nuevo sistema de combos: a partir de 2 conejos seguidos aparece COMBO X2, X3, etc. Si se escapa un conejo, pierdes el combo.",
                 c110c: "Ahora los puntos aparecen flotando donde tocas.",
                 c110d: "El estanque ahora tiene un suave efecto de agua en movimiento.",
-                c110e: "Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con el botón de silencio).",
-                c110f: "La música del menú ahora suena al abrir el juego, como en Dreadwater, y se bajó un poco el volumen de las canciones.",
+                c110e: "Nueva música: canción suave en el menú principal y música de fondo durante el juego (se apaga con los botones de música y sonido).",
                 c105a: "Se añadieron caritas a los conejos.", c105b: "Varios errores han sido corregidos.",
                 c105c: "Se optimizó la experiencia de juego.", c105d: "Se mejoró la animación de los conejos al saltar.",
                 c105e: "Se añadió un botón para silenciar el sonido del juego.",
@@ -441,6 +469,7 @@
             },
             en: {
                 play: "PLAY", settings: "Settings", about: "About", language: "LANGUAGE", back: "BACK",
+                music: "MUSIC", sound: "SOUND", splashPlay: "▶ PLAY",
                 createdBy: "Created by <strong>DX GAMES</strong>", version: "Version: v1.1.0", thanks: "THANKS FOR PLAYING!",
                 changelog: "CHANGELOG",
                 c106a: "The whole game was translated into English.",
@@ -450,8 +479,7 @@
                 c110b: "New combo system: from 2 squashes in a row, COMBO X2, X3, etc. appears. If a rabbit escapes, you lose the combo.",
                 c110c: "Points now float up where you tap.",
                 c110d: "The pond now has a gentle moving water effect.",
-                c110e: "New music: a gentle song in the main menu and background music during gameplay (muted with the sound button).",
-                c110f: "The menu music now plays as soon as the game opens, like in Dreadwater, and the songs' volume was lowered a bit.",
+                c110e: "New music: a gentle song in the main menu and background music during gameplay (muted with the music and sound buttons).",
                 c105a: "Faces were added to the rabbits.", c105b: "Several bugs have been fixed.",
                 c105c: "The game experience was optimized.", c105d: "The rabbits' jumping animation was improved.",
                 c105e: "A button to mute the game's sound was added.",
@@ -484,7 +512,11 @@
         const finalRecord = document.getElementById('final-record');
         const menuRecord = document.getElementById('menu-record');
         const uiHint = document.getElementById('hint');
-        const muteBtn = document.getElementById('mute-btn');
+        const musicBtn = document.getElementById('music-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const settingsMusicBtn = document.getElementById('settings-music-btn');
+        const settingsSoundBtn = document.getElementById('settings-sound-btn');
+        const splash = document.getElementById('splash');
         const comboDisplay = document.getElementById('combo-display');
         let comboTimeout = null;
         function showCombo() {
@@ -519,6 +551,15 @@
             restartGame();
         };
 
+        // Pantalla de inicio: el toque en PLAY desbloquea el audio y arranca
+        // la música del menú, y la pantalla desaparece con una animación.
+        window.enterGame = function() {
+            unlockAudio();
+            splash.classList.add('leaving');
+            mainMenu.style.display = 'flex';
+            setTimeout(() => { splash.style.display = 'none'; }, 550);
+        };
+
         window.toggleAbout = function(show) { aboutScreen.style.display = show ? 'flex' : 'none'; };
 
         function applyLang() {
@@ -526,7 +567,7 @@
             document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
             document.getElementById('lang-es').classList.toggle('selected', lang === 'es');
             document.getElementById('lang-en').classList.toggle('selected', lang === 'en');
-            updateRecordDisplay(); updateUI();
+            updateRecordDisplay(); updateUI(); updateAudioButtons();
         }
         window.toggleSettings = function(show) {
             settingsScreen.style.display = show ? 'flex' : 'none';
@@ -713,17 +754,42 @@
         // --- Audio ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const master = audioCtx.createGain(); master.connect(audioCtx.destination);
-        let muted = false;
-        try { muted = localStorage.getItem('pimPamRabbit_mute') === '1'; } catch (e) {}
-        master.gain.value = muted ? 0 : 1;
-        muteBtn.innerText = muted ? '🔇' : '🔊';
+        // Música y sonido por separado, con su ajuste guardado.
+        let musicOn = true, soundOn = true;
+        try {
+            musicOn = localStorage.getItem('pimPamRabbit_music') !== '0';
+            soundOn = localStorage.getItem('pimPamRabbit_sound') !== '0';
+            // Migración del botón de silencio anterior: si estaba silenciado, se apagan música y sonido.
+            if (localStorage.getItem('pimPamRabbit_mute') === '1') {
+                musicOn = false; soundOn = false;
+                localStorage.removeItem('pimPamRabbit_mute');
+            }
+        } catch (e) {}
+        function updateAudioButtons() {
+            musicBtn.innerText = musicOn ? '🎵' : '🔇';
+            soundBtn.innerText = soundOn ? '🔊' : '🔇';
+            settingsMusicBtn.innerText = '🎵 ' + t('music') + ': ' + (musicOn ? 'ON' : 'OFF');
+            settingsSoundBtn.innerText = '🔊 ' + t('sound') + ': ' + (soundOn ? 'ON' : 'OFF');
+        }
+        function applyAudioSettings() {
+            master.gain.value = soundOn ? 1 : 0;
+            menuMusic.muted = !musicOn;
+            gameMusic.muted = !musicOn;
+            updateAudioButtons();
+        }
         function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
-        window.toggleMute = function() {
-            muted = !muted;
-            master.gain.value = muted ? 0 : 1;
-            muteBtn.innerText = muted ? '🔇' : '🔊';
-            if (typeof menuMusic !== 'undefined') { menuMusic.muted = muted; gameMusic.muted = muted; }
-            try { localStorage.setItem('pimPamRabbit_mute', muted ? '1' : '0'); } catch (e) {}
+        window.toggleMusic = function() {
+            musicOn = !musicOn;
+            try { localStorage.setItem('pimPamRabbit_music', musicOn ? '1' : '0'); } catch (e) {}
+            applyAudioSettings();
+            if (!musicOn) pauseMusic();
+            else if (isPlaying && !isPaused) playGameMusic();
+            else if (!isPlaying && !isTaunting) playMenuMusic();
+        };
+        window.toggleSound = function() {
+            soundOn = !soundOn;
+            try { localStorage.setItem('pimPamRabbit_sound', soundOn ? '1' : '0'); } catch (e) {}
+            applyAudioSettings();
         };
         // --- Música de fondo: audio/music/menu.mp3 (menú) y audio/music/music1.mp3 (juego) ---
         // Como en Dreadwater: las canciones son elementos <audio> directos, sin
@@ -770,11 +836,12 @@
         // Se reintenta en cada toque hasta que suene, por si el primero fue JUGAR.
         function unlockAudio() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            if (!muted) { menuMusic.muted = false; gameMusic.muted = false; }
+            applyAudioSettings();
             if (!isPlaying && !isTaunting) playMenuMusic();
         }
         ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(ev =>
             window.addEventListener(ev, unlockAudio));
+        applyAudioSettings();
         playMenuMusic();
 
         
